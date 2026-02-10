@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>新春小車神 - 攤位遊戲計分系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle, #b91c1c 0%, #7f1d1d 100%);
+            color: #fef3c7;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            touch-action: manipulation;
+        }
+
+        .lantern {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            background: #dc2626;
+            border-radius: 15px;
+            border: 3px solid #facc15;
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+            animation: swing 3s ease-in-out infinite alternate;
+            z-index: 5;
+        }
+        .lantern::after {
+            content: "福";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #facc15;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .horse-deco {
+            position: absolute;
+            opacity: 0.15;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes swing {
+            from { transform: rotate(-8deg); }
+            to { transform: rotate(8deg); }
+        }
+
+        .score-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 4px solid #facc15;
+            border-radius: 2.5rem;
+            transition: transform 0.1s;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-card:active {
+            transform: scale(0.96);
+        }
+
+        .timer-display {
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 30px #facc15, 0 0 10px #ffffff;
+        }
+
+        .title-glow {
+            text-shadow: 0 0 15px rgba(250, 204, 21, 0.8);
+            background: linear-gradient(to bottom, #fde047, #ca8a04);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .rule-badge {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #facc15;
+            border-radius: 1.5rem;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 裝飾背景 -->
+    <div class="horse-deco top-10 left-10">
+        <svg width="250" height="250" viewBox="0 0 24 24" fill="#facc15"><path d="M19,20H17L15.68,14.72L14.36,12H10V10H14V8H11V6H13V4H7V6H9V8H6L3.41,10.59L3,11V15H5V11.41L6.41,10H8V12H5V14H8V20H6L5.32,14.72L4,12H2V20H0V22H24V20H19Z"/></svg>
+    </div>
+    <div class="horse-deco bottom-10 right-10 scale-x-[-1]">
+        <svg width="250" height="250" viewBox="0 0 24 24" fill="#facc15"><path d="M19,20H17L15.68,14.72L14.36,12H10V10H14V8H11V6H13V4H7V6H9V8H6L3.41,10.59L3,11V15H5V11.41L6.41,10H8V12H5V14H8V20H6L5.32,14.72L4,12H2V20H0V22H24V20H19Z"/></svg>
+    </div>
+
+    <div class="lantern" style="top: 20px; left: 10%;"></div>
+    <div class="lantern" style="top: 20px; right: 10%;"></div>
+
+    <div id="app" class="relative z-10 flex flex-col items-center justify-center h-full p-6">
+        
+        <!-- 頁面 1: 遊戲簡介與控制說明 -->
+        <div id="intro-screen" class="text-center w-full max-w-7xl overflow-y-auto max-h-full px-4">
+            <h1 class="text-7xl font-black mb-4 title-glow">🏎️ 新春小車神 🏎️</h1>
+            
+            <div class="bg-red-900/80 p-8 rounded-[3rem] border-4 border-yellow-500 shadow-2xl backdrop-blur-md">
+                <div class="flex flex-col lg:flex-row gap-8 items-stretch">
+                    
+                    <!-- 左側：操控說明圖 -->
+                    <div class="lg:w-1/2 flex flex-col items-center justify-center w-full">
+                        <h2 class="text-3xl font-bold mb-4 text-yellow-100 flex items-center gap-2">
+                            <span>🎮</span> 遙控操作教學
+                        </h2>
+                        <div class="border-4 border-yellow-500/50 rounded-[2rem] overflow-hidden shadow-2xl bg-black/40 w-full h-full flex items-center justify-center">
+                            <img src="https://api.clp.so/api/v1/files/get/61771960-911b-4357-96a2-e61e6790757a" alt="[操控說明截圖]" class="max-h-[50vh] w-auto lg:w-full lg:max-h-none lg:h-auto object-contain">
+                        </div>
+                        <p class="mt-4 text-xl text-yellow-200 font-medium italic">熟悉按鍵位置，準備成為最強車神！</p>
+                    </div>
+
+                    <!-- 右側：計分規則 -->
+                    <div class="lg:w-1/2 flex flex-col w-full">
+                        <h2 class="text-3xl font-bold mb-4 text-yellow-100 flex items-center gap-2">
+                            <span>🧧</span> 計分規則
+                        </h2>
+                        <div class="flex flex-col gap-4 h-full justify-center">
+                            <div class="rule-badge p-6 flex items-center gap-6 bg-red-800/40">
+                                <span class="text-5xl">🧧</span>
+                                <div class="text-left">
+                                    <p class="text-xl font-bold text-yellow-100">新春裝飾</p>
+                                    <p class="text-4xl font-black text-yellow-400">+1 <span class="text-lg">分</span></p>
+                                </div>
+                            </div>
+                            <div class="rule-badge p-6 flex items-center gap-6 border-4 border-yellow-400 bg-yellow-400/20 shadow-lg transform scale-105">
+                                <span class="text-5xl">🐎</span>
+                                <div class="text-left">
+                                    <p class="text-xl font-bold text-yellow-500">馬年生肖</p>
+                                    <p class="text-4xl font-black text-yellow-400">+3 <span class="text-lg">分</span></p>
+                                </div>
+                            </div>
+                            <div class="rule-badge p-6 flex items-center gap-6 bg-red-800/40">
+                                <span class="text-5xl">🐲</span>
+                                <div class="text-left">
+                                    <p class="text-xl font-bold text-yellow-100">其他生肖</p>
+                                    <p class="text-4xl font-black text-yellow-400">+1 <span class="text-lg">分</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="showSetup()" 
+                    class="mt-8 block w-full bg-gradient-to-r from-yellow-600 to-yellow-400 text-red-950 text-4xl font-black py-6 rounded-3xl transition-all transform hover:scale-105 active:scale-95 shadow-2xl border-b-8 border-yellow-800">
+                    下一步 (設定時間) ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- 頁面 2: 初始設定頁面 -->
+        <div id="setup-screen" class="hidden text-center w-full max-w-4xl">
+            <h1 class="text-8xl font-black mb-4 title-glow">🏎️ 新春小車神 🏎️</h1>
+            <div class="bg-red-900/80 p-12 rounded-[4rem] border-4 border-yellow-500 shadow-2xl backdrop-blur-md">
+                <label class="block text-4xl mb-10 text-yellow-100 font-bold">比賽時間設定 (秒)</label>
+                <div class="flex items-center justify-center gap-10 mb-12">
+                    <button onclick="adjustTime(-10)" class="text-6xl bg-red-700 w-40 h-28 rounded-3xl border-4 border-yellow-500 shadow-lg active:scale-95 transition-all font-black flex items-center justify-center">-10</button>
+                    <input type="number" id="time-input" value="60" min="10" max="999" 
+                        class="text-8xl p-6 rounded-3xl text-red-900 w-64 text-center font-black focus:outline-none border-8 border-yellow-400 bg-yellow-50 shadow-inner">
+                    <button onclick="adjustTime(10)" class="text-6xl bg-red-700 w-40 h-28 rounded-3xl border-4 border-yellow-500 shadow-lg active:scale-95 transition-all font-black flex items-center justify-center">+10</button>
+                </div>
+                <button onclick="startGame()" 
+                    class="bg-gradient-to-r from-yellow-600 to-yellow-400 text-red-950 text-5xl font-black py-6 rounded-3xl transition-all transform hover:scale-105 active:scale-95 shadow-2xl border-b-8 border-yellow-800 w-full">
+                    🧧 開始比賽 🧧
+                </button>
+            </div>
+        </div>
+
+        <!-- 頁面 3: 遊戲計時計分頁面 -->
+        <div id="game-screen" class="hidden w-full max-w-7xl">
+            <div class="text-center mb-6">
+                <h1 class="text-6xl font-black title-glow tracking-widest">🏎️ 新春小車神 🏎️</h1>
+            </div>
+            <div class="flex justify-between items-center bg-black/40 p-6 rounded-[3rem] border-2 border-yellow-900/50 mb-10">
+                <button onclick="resetGame()" class="bg-red-900 text-yellow-400 px-8 py-4 rounded-2xl border-2 border-yellow-600 text-xl font-bold active:scale-90 transition-all">⬅️ 結束</button>
+                <div class="text-center">
+                    <div id="timer" class="timer-display text-[10rem] font-black text-yellow-400 leading-none">00</div>
+                    <p class="text-xl font-bold text-yellow-200 tracking-widest mt-2">剩餘秒數</p>
+                </div>
+                <button onclick="resetScores()" class="bg-red-900 text-yellow-400 px-8 py-4 rounded-2xl border-2 border-yellow-600 text-xl font-bold active:scale-90 transition-all">🔄 重置</button>
+            </div>
+            <div class="grid grid-cols-2 gap-12">
+                <div class="score-card p-12 text-center shadow-2xl bg-red-950/40" onclick="addPoint(1)">
+                    <div class="absolute top-6 left-6 bg-red-600 text-white px-6 py-2 rounded-full text-xl font-black shadow-lg">PLAYER 1</div>
+                    <h2 class="text-4xl font-bold mb-6 text-red-400">🔴 紅色小車神</h2>
+                    <div id="score-1" class="text-[16rem] font-black leading-none text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]">0</div>
+                    <div class="mt-8 inline-block bg-yellow-500 text-red-950 px-10 py-3 rounded-full font-black animate-pulse text-2xl shadow-lg">點擊加分</div>
+                </div>
+                <div class="score-card p-12 text-center shadow-2xl bg-blue-950/40" onclick="addPoint(2)">
+                    <div class="absolute top-6 right-6 bg-blue-600 text-white px-6 py-2 rounded-full text-xl font-black shadow-lg">PLAYER 2</div>
+                    <h2 class="text-4xl font-bold mb-6 text-blue-400">🔵 藍色小車神</h2>
+                    <div id="score-2" class="text-[16rem] font-black leading-none text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]">0</div>
+                    <div class="mt-8 inline-block bg-yellow-500 text-red-950 px-10 py-3 rounded-full font-black animate-pulse text-2xl shadow-lg">點擊加分</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結束彈窗 (背景改為深紅色，移除 AI) -->
+        <div id="overlay" class="fixed inset-0 bg-red-950/90 hidden items-center justify-center z-50 p-8 text-center backdrop-blur-xl">
+            <div class="bg-red-800 border-[12px] border-yellow-500 p-12 rounded-[5rem] max-w-4xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                <div class="text-3xl mb-4 text-yellow-200">🏁 賽事圓滿結束 🏁</div>
+                <div id="winner-text" class="text-6xl font-black mb-6 text-white">玩家獲勝</div>
+                <div class="grid grid-cols-2 gap-6 mb-12">
+                    <div class="bg-black/30 p-6 rounded-3xl border-4 border-red-500 text-white">
+                        <p class="text-xl text-red-300">紅色得分</p>
+                        <p id="final-1" class="text-5xl font-black">0</p>
+                    </div>
+                    <div class="bg-black/30 p-6 rounded-3xl border-4 border-blue-500 text-white">
+                        <p class="text-xl text-blue-300">藍色得分</p>
+                        <p id="final-2" class="text-5xl font-black">0</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button onclick="startGame()" class="flex-1 bg-yellow-500 text-red-950 font-black py-6 rounded-3xl text-3xl shadow-xl active:scale-95 transition-transform">再戰一局</button>
+                    <button onclick="resetGame()" class="flex-1 bg-red-900 text-yellow-500 font-black py-6 rounded-3xl text-2xl border-4 border-yellow-600 active:scale-95 transition-transform">回主選單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 0, timerId = null, bgmInterval = null;
+        let scores = { 1: 0, 2: 0 }, isGameRunning = false;
+        let audioCtx = null;
+
+        // --- 強制初始化音訊引擎 (修正失效問題) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // 靜默測試，確保 AudioContext 被啟用
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            g.gain.value = 0.0001;
+            osc.connect(g); g.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.15) {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state !== 'running') return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // --- 背景音樂循環 ---
+        function startBgm() {
+            if (bgmInterval) clearInterval(bgmInterval);
+            const playNote = () => {
+                if (!isGameRunning) return;
+                // 模擬輕快新年律動 C - E - G - E
+                const melody = [261.63, 329.63, 392.00, 329.63];
+                let i = 0;
+                const beat = setInterval(() => {
+                    if (!isGameRunning || i >= melody.length) { clearInterval(beat); return; }
+                    playTone(melody[i], 0.25, 'triangle', 0.08); // 調高一點音量
+                    i++;
+                }, 250);
+            };
+            playNote();
+            bgmInterval = setInterval(playNote, 1000);
+        }
+
+        function stopBgm() { 
+            clearInterval(bgmInterval); 
+            bgmInterval = null;
+        }
+
+        function hideAllScreens() {
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            const overlay = document.getElementById('overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        function showSetup() {
+            initAudio(); // 點擊按鈕啟動音訊引擎
+            hideAllScreens();
+            document.getElementById('setup-screen').classList.remove('hidden');
+            playTone(523.25, 0.1); // Do
+        }
+
+        function resetGame() {
+            initAudio();
+            isGameRunning = false;
+            clearInterval(timerId);
+            stopBgm();
+            hideAllScreens();
+            document.getElementById('intro-screen').classList.remove('hidden');
+            playTone(329.63, 0.2); // Mi
+        }
+
+        function adjustTime(val) {
+            initAudio();
+            const input = document.getElementById('time-input');
+            input.value = Math.max(10, parseInt(input.value) + val);
+            playTone(440, 0.05);
+        }
+
+        function startGame() {
+            initAudio(); // 比賽開始前再次確保啟用
+            timeLeft = parseInt(document.getElementById('time-input').value) || 60;
+            // 立即更新顯示，修復顯示錯誤問題
+            document.getElementById('timer').innerText = timeLeft;
+            
+            scores = { 1: 0, 2: 0 };
+            isGameRunning = true;
+            updateScoreDisplay();
+            hideAllScreens();
+            document.getElementById('game-screen').classList.remove('hidden');
+            startBgm();
+            startTimer();
+            // 開始提示音
+            playTone(523.25, 0.1);
+            setTimeout(() => playTone(659.25, 0.1), 150);
+            setTimeout(() => playTone(783.99, 0.3), 300);
+        }
+
+        function startTimer() {
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    playTone(880, 0.1, 'square', 0.08); // 倒數警報
+                }
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function addPoint(p) {
+            if (!isGameRunning) return;
+            scores[p]++;
+            updateScoreDisplay();
+            // 不同玩家不同音調
+            playTone(p === 1 ? 523.25 : 783.99, 0.15, 'sine', 0.2);
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-1').innerText = scores[1];
+            document.getElementById('score-2').innerText = scores[2];
+        }
+
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(timerId); 
+            stopBgm();
+            // 終場哨聲
+            playTone(1046.5, 0.5, 'square', 0.1); 
+            document.getElementById('final-1').innerText = scores[1];
+            document.getElementById('final-2').innerText = scores[2];
+            document.getElementById('winner-text').innerText = scores[1] > scores[2] ? "🔴 紅色小車神領先！" : (scores[1] < scores[2] ? "🔵 藍色小車神領先！" : "握手言和，新年快樂！");
+            
+            const overlay = document.getElementById('overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        function pcmToWav(base64, rate) {
+            const buffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+            const s = (o, str) => { for (let i=0; i<str.length; i++) view.setUint8(o+i, str.charCodeAt(i)); };
+            s(0, 'RIFF'); view.setUint32(4, 36 + buffer.byteLength, true);
+            s(8, 'WAVE'); s(12, 'fmt '); view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+            view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
+            view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+            s(36, 'data'); view.setUint32(40, buffer.byteLength, true);
+            return new Blob([header, buffer], { type: 'audio/wav' });
+        }
+
+        function resetScores() { 
+            scores = { 1: 0, 2: 0 }; 
+            updateScoreDisplay(); 
+            playTone(440, 0.1); 
+        }
+
+        // 頁面加載後嘗試初始化
+        window.onload = initAudio;
+    </script>
+</body>
+</html>
